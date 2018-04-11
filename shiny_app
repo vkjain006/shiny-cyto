@@ -1,0 +1,45 @@
+library(flowCore)
+library(flowViz)
+library(flowStats)
+library(openCyto)
+library(data.table)
+library(shiny)
+
+setwd("C:/Users/va42304/Downloads/Seb/App-1")
+
+#Define Ui
+
+ui = fluidPage(
+  titlePanel("Basic Flow Cytometry Data Analysis using Auto Gating Process"),
+  
+  sidebarPanel(
+    mainPanel(
+      plotOutput('plot1', height = 800, width = 800)
+  
+      )
+  )  
+)
+
+#Define server logic
+server = function(input, output) {
+   gt_cell = gatingTemplate(x = "t_cell1.csv")
+    
+    ncfs = read.ncdfFlowSet(files = "Compensation Controls_Unstained Control_002.fcs")
+    
+    tData5 = transform(ncfs, transformList(colnames(ncfs)[6:8], asinh))
+    
+    gs <- GatingSet(tData5)
+    
+    getNodes(gs[[1]])
+    
+    gating(gt_cell, gs)
+    output$plot1 = renderPlot( expr = plotGate(gs[[1]], path =2),width = 800, height = 800
+   # plot(gs[[1]]),
+        
+  )
+  
+}
+
+#Run the app 
+
+shinyApp( ui = ui, server = server)
