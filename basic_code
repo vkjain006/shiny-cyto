@@ -1,0 +1,55 @@
+library(flowCore)
+library(flowViz)
+library(flowStats)
+
+setwd("C:/Users/va42304/Downloads/Seb/App-1")
+
+# import the data 
+# this read.FCS() function imports the flow data
+ntl<-read.FCS("Compensation Controls_Unstained Control_002.fcs", alter.names = TRUE, transformation = FALSE)
+
+#update marker names
+#chnls <- c("FITC.A", "APC.A", "PerCP.Cy5.5.A")
+#markers = c("CD3","CD4","CD8")
+#names(markers) <-chnls
+#markernames(ntl) <- markers
+
+#plot raw untranformed data
+plot(ntl)
+
+
+#transforming the data
+tData1 = transform(ntl, transformList(colnames(ntl)[6:8], asinh))
+plot(tData1)
+
+#gating
+#using opencyto for automatic gating
+#create and import gating template
+library(openCyto)
+library(data.table)
+
+gt_cell = gatingTemplate(x = "t_cell1.csv")
+
+plot(gt_cell)
+ncfs = read.ncdfFlowSet(files = "Compensation Controls_Unstained Control_002.fcs")
+tData5 = transform(ncfs, transformList(colnames(ncfs)[6:8], asinh))
+gs <- GatingSet(tData5)
+getNodes(gs[[1]])
+gating(gt_cell, gs)
+
+#renaming nodes
+setNode(gs, "APC-A+", "CD4")
+setNode(gs, "PerCP-Cy5-5-A+", "CD8")
+setNode(gs, "APC-A-PerCP-Cy5-5-A+", "CD4-CD8+")
+setNode(gs, "APC-A+PerCP-Cy5-5-A+", "CD4+CD8+")
+setNode(gs, "APC-A+PerCP-Cy5-5-A-", "CD4+CD8-")
+setNode(gs, "APC-A-PerCP-Cy5-5-A-", "CD4-CD8-")
+
+plot(gs[[1]])
+plotGate(gs[[1]], path =2)
+
+
+
+
+# extract expression values and put into a data frame
+n <- as.data.frame(exprs(ntl))
